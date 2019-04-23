@@ -68,7 +68,7 @@ namespace CompositionSampleGallery
             LoadImages();
 
             // Setup some ambient animations to keep the scene moving even if no one is actively interacting
-            ConfigureAmbientAnimations();
+            //ConfigureAmbientAnimations();
         }
 
 
@@ -97,9 +97,9 @@ namespace CompositionSampleGallery
 #endif
             _tracker = InteractionTracker.CreateWithOwner(_compositor, this);
             _tracker.MinScale = 0.6f;
-            _tracker.MaxScale = 5.0f;
+            _tracker.MaxScale = 10.0f;
 
-            _tracker.MaxPosition = new Vector3((float)Root.ActualWidth * 1.5f, 0, 0);
+            _tracker.MaxPosition = new Vector3((float)Root.ActualWidth * 100, 0, 0);
             _tracker.MinPosition = _tracker.MaxPosition * -1;
 
             _tracker.ScaleInertiaDecayRate = 0.96f;
@@ -114,13 +114,13 @@ namespace CompositionSampleGallery
             //
 
             var scaleExpression = EF.Lerp(0, 1000, (1 - tracker.Scale) / (1 - tracker.MaxScale));
-            _worldContainer.StartAnimation("Offset.Z", scaleExpression);
+            //_worldContainer.StartAnimation("Offset.Z", scaleExpression);
 
             //
             // Bind the output of the tracker to the world container's XY position.
             //
 
-            _worldContainer.StartAnimation("Offset.XY", -tracker.Position.XY);
+            //_worldContainer.StartAnimation("Offset.XY", -tracker.Position.XY);
 
 
             //
@@ -192,27 +192,26 @@ namespace CompositionSampleGallery
 
         private void LoadNodes()
         {
-            _nodes = new List<NodeInfo>(200);
-
-            //
-            // First, add in the text nodes
-            //
-
-            CanvasTextFormat monthsTextFormat = new CanvasTextFormat();
-            monthsTextFormat.FontFamily = "Segoe UI";
-            monthsTextFormat.FontSize = 120.0f;
+            _nodes = new List<NodeInfo>(0);
 
             CanvasTextFormat textFormat = new CanvasTextFormat();
             textFormat.FontFamily = "Segoe UI";
-            textFormat.FontSize = 36.0f;
+            textFormat.FontSize = 36;
+            textFormat.HorizontalAlignment = CanvasHorizontalAlignment.Center;
+            //textFormat.Options
 
-            _textNodes = new TextNodeInfo[]
+            int nodeCount = 1000;
+            _textNodes = new TextNodeInfo[nodeCount];
+            //{
+            //    new TextNodeInfo("123", textFormat, new Vector2(240, 52), new Vector3(0, 0, -0), 1.0f, 1.0f, false),
+            //    new TextNodeInfo("456", textFormat, new Vector2(240, 52), new Vector3(241, -0, -0), 1.0f, 1.0f, false),
+            //    new TextNodeInfo("789", textFormat, new Vector2(240, 52), new Vector3(482, 0, -0), 1.0f, 1.0f, false),
+            //};
+            float textWidth = 78;
+            for (int i = 0; i < nodeCount; i++)
             {
-                new TextNodeInfo("JAN    FEB    MAR    APR    MAY", monthsTextFormat, new Vector2(1920, 200), new Vector3(0.0f, -2500.0f, -3000.0f), 10.0f, 0.1f, false),
-                new TextNodeInfo("LAYOUT", textFormat, new Vector2(180, 52), new Vector3(76.1f, 131.2f, -100.0f), 1.0f, 0.5f, true),
-                new TextNodeInfo("ADVENTURE", textFormat, new Vector2(240, 52), new Vector3(-259.8f, -101.1f, -500.0f), 0.8f, 0.5f, true),
-                new TextNodeInfo("ENGINEERING", textFormat, new Vector2(280, 52), new Vector3(509.8f, 51.1f, -322.2f), 0.8f, 0.5f, true),
-            };
+                _textNodes[i] = new TextNodeInfo(i.ToString(), textFormat, new Vector2(textWidth, 52), new Vector3(i * textWidth, 0, -0), 1.0f, 1.0f, false);
+            }
 
             _nodes.AddRange(_textNodes);
 
@@ -240,10 +239,10 @@ namespace CompositionSampleGallery
             NodeManager.Instance.MinScale = 0.05f;
             NodeManager.Instance.MaxScale = 0.4f;
 
-            for (int i = _nodes.Count; i < _nodes.Capacity; i++)
-            {
-                _nodes.Add(NodeManager.Instance.GenerateRandomImageNode(_thumbnails.Count));
-            }
+            //for (int i = _nodes.Count; i < _nodes.Capacity; i++)
+            //{
+            //    _nodes.Add(NodeManager.Instance.GenerateRandomImageNode(_thumbnails.Count));
+            //}
 
 
             //
@@ -268,7 +267,7 @@ namespace CompositionSampleGallery
             {
                 Uri uri = new Uri(_thumbnails[i].ImageUrl);
                 _imageBrushes[i] = await ImageLoader.Instance.LoadFromUriAsync(uri, new Size(500, 300));
-
+                
                 loadedImageCount++;
             }
 
@@ -286,7 +285,7 @@ namespace CompositionSampleGallery
                 var textSurface = ImageLoader.Instance.LoadText(textNode.Text,  new Size(textNode.TextureSize.X, textNode.TextureSize.Y), textNode.TextFormat, Colors.Black, Colors.Transparent);
 
                 _textBrushes[i] = _compositor.CreateSurfaceBrush(textSurface.Surface);
-
+               
                 //
                 // Remember the index of the brush so that we can refer to it later.
                 //
@@ -363,9 +362,33 @@ namespace CompositionSampleGallery
             size.Width *= nodeInfo.Scale;
             size.Height *= nodeInfo.Scale;
 
-            sprite.Size = new Vector2((float)size.Width, (float)size.Height);
-            sprite.AnchorPoint = new Vector2(0.5f, 0.5f);
-            sprite.Offset = nodeInfo.Offset;
+            var sizeVec = new Vector2((float)size.Width, (float)size.Height);
+            sprite.Size = sizeVec;
+            //sprite.AnchorPoint = new Vector2(0.5f, 0.5f);
+            sprite.AnchorPoint = new Vector2(0f, 0f);
+
+            //sprite.Offset = nodeInfo.Offset;
+
+            var tracker = _tracker.GetReference();
+
+            var scaleExpression = EF.Lerp(1, 2, (1 - tracker.Scale) / (1 - tracker.MaxScale));
+
+            var scaleAndOffsetExp = EF.Lerp(new Vector2(nodeInfo.Offset.X, nodeInfo.Offset.Y), new Vector2(nodeInfo.Offset.X * 20, nodeInfo.Offset.Y), (1 - tracker.Scale) / (1 - tracker.MaxScale));
+            var sizeExp = EF.Lerp(sizeVec, new Vector2(sizeVec.X * 5, sizeVec.Y), (1 - tracker.Scale) / (1 - tracker.MaxScale));
+            var sizeExoop = EF.Lerp(sizeVec, new Vector2(sizeVec.X * 5, sizeVec.Y * 4), (1 - tracker.Scale) / (1 - tracker.MaxScale));
+            // var sizeExpold = EF.Lerp(sizeVec, sizeVec * 5, (1 - tracker.Scale) / (1 - tracker.MaxScale));
+
+            var offsetVec = new Vector2(nodeInfo.Offset.X, nodeInfo.Offset.Y);
+            //var scaledOffsetVec = new Vector2(nodeInfo.Offset.X, nodeInfo.Offset.Y);
+
+            //sprite.StartAnimation("Offset.XY", -tracker.Position.XY + scaleAndOffsetExp);
+            sprite.StartAnimation("Offset.XY", -tracker.Position.XY + scaleAndOffsetExp);
+            //sprite.StartAnimation("Size.XY", sizeExoop);
+            //sprite.Scale = new Vector3(1, 1, 1);
+
+            //sprite.Clip = _compositor.CreateInsetClip(0, 0, 60, 0);
+
+
             _worldContainer.Children.InsertAtTop(sprite);
 
 
